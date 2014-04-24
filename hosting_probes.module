@@ -1,29 +1,77 @@
 <?php
 
 /**
- * Implementation of hook_menu();
- */
-function hosting_probes_menu() {
-}
-
-/**
  * Returns an array of entities loaded from a site.
+ *
+ * Note that this doesn't load the full entity, since that would require
+ * bootstrapping the site. Instead it only returns basic information.
+ * 
+ * This is more or less a wrapper for hosting_probes_select_query().
  */ 
-function hosting_probes_get_entities($site, $entity_type, $limit = NULL, $offset = NULL, $order_by = NULL) {
+function hosting_probes_load_entities($site, $entity_type, $limit = NULL, $offset = NULL, $order_by = NULL) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
 
+  switch ($entity_type) {
+    case 'node':
+      break;
+    case 'user':
+      $query = db_select('users', 'u');
+      $query->condition('u.uid', 0, '<>');
+      $query->fields('u', array('uid', 'name', 'status', 'created', 'access'));
+
+      if ($limit !== NULL) {
+        if ($offset === NULL) {
+          $offset = 0;
+        }
+
+        $query->range($offset, $limit);
+      }
+
+      if ($order_by !== NULL) {
+        $order_by = explode(' ', $order_by, 2);
+        
+        $query->orderBy($order_by[0], $order_by[1]);
+      }
+
+      $result = hosting_probes_select_query($site, $query);
+
+      $users = array();
+
+      foreach ($result as $user) {
+        $users[$user->uid] = $user;
+      }
+
+      return $users;
+
+      break;
+  }
 }
 
 /**
  * Runs a custom SELECT query on a site.
  */
-function hosting_probes_select_query($site, $query_options) {
+function hosting_probes_select_query($site, $query_object) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
 
+  // Todo: Switch to site DB
+  return $query_object->execute();
 }
 
 /**
  * Runs variable_get on a site.
  */
 function hosting_probes_variable_get($site, $variable_name, $default = NULL) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
+
 
 }
 
@@ -31,6 +79,11 @@ function hosting_probes_variable_get($site, $variable_name, $default = NULL) {
  * Runs variable_set on a site.
  */
 function hosting_probes_variable_set($site, $variable_name, $variable_value) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
+
 
 }
 
@@ -38,6 +91,11 @@ function hosting_probes_variable_set($site, $variable_name, $variable_value) {
  * Returns a list of enabled modules on a site.
  */
 function hosting_probes_module_list($site, $sort = FALSE) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
+
 
 }
 
@@ -45,6 +103,11 @@ function hosting_probes_module_list($site, $sort = FALSE) {
  * Enables module on a site.
  */
 function hosting_probes_module_enable($site, $module_list) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
+
 
 }
 
@@ -52,6 +115,11 @@ function hosting_probes_module_enable($site, $module_list) {
  * Disables a module on a site.
  */
 function hosting_probes_module_disable($site, $module_list) {
+  $site = _hosting_probes_get_site($site);
+  if (empty($site)) {
+    return NULL;
+  }
+
 
 }
 
