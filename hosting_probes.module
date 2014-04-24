@@ -8,7 +8,7 @@
  * 
  * This is more or less a wrapper for hosting_probes_select_query().
  */ 
-function hosting_probes_load_entities($site, $entity_type, $limit = NULL, $offset = NULL, $order_by = NULL) {
+function hosting_probes_load_entities($site, $entity_type, $conditions = NULL, $limit = NULL, $offset = NULL, $order_by = NULL) {
   $site = _hosting_probes_get_site($site);
   if (empty($site)) {
     return NULL;
@@ -16,11 +16,28 @@ function hosting_probes_load_entities($site, $entity_type, $limit = NULL, $offse
 
   switch ($entity_type) {
     case 'node':
+      $query = db_select('node', 'n');
+      $query->fields('n', array('nid, vid, type, language, title, uid, status, created, changed'));
+      $query->addField('n', 'nid', 'eid');
+
       break;
     case 'user':
       $query = db_select('users', 'u');
-      $query->condition('u.uid', 0, '<>');
       $query->fields('u', array('uid', 'name', 'status', 'created', 'access'));
+      $query->addField('u', 'uid', 'eid');
+      
+      if ($conditions === NULL) {
+        $conditions = array();    
+        $conditions[0] = new stdClass();
+        $conditions[0]->field = "uid";
+        $conditions[0]->value = "0";
+        $conditions[0]->operator = "<>";
+      }
+
+      foreach($conditions as $condition) {
+        $query->condition($condition->field, $condition->value, $condition->operator);
+      }
+
 
       if ($limit !== NULL) {
         if ($offset === NULL) {
@@ -38,13 +55,13 @@ function hosting_probes_load_entities($site, $entity_type, $limit = NULL, $offse
 
       $result = hosting_probes_select_query($site, $query);
 
-      $users = array();
+      $entities = array();
 
-      foreach ($result as $user) {
-        $users[$user->uid] = $user;
+      foreach ($result as $entity) {
+        $entities[$entity->eid] = $entity;
       }
 
-      return $users;
+      return $entities;
 
       break;
   }
