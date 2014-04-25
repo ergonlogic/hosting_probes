@@ -19,6 +19,11 @@ function hosting_probes_schema() {
         'type' => 'int',
         'not null' => TRUE,
       ),
+      'db_port' => array(
+        'description' => 'The port to which to connect to the database.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
       'db_name' => array(
         'description' => 'The name of the database.',
         'type' => 'text',
@@ -29,7 +34,7 @@ function hosting_probes_schema() {
         'type' => 'text',
         'not null' => TRUE,
       ),
-      'db_password' => array(
+      'db_passwd' => array(
         'description' => 'The password of the user.',
         'type' => 'text',
       ),
@@ -38,7 +43,7 @@ function hosting_probes_schema() {
         'type' => 'text',
         'not null' => TRUE,
       ),
-      'db_driver' => array(
+      'db_type' => array(
         'description' => 'The driver to use to connect to the database.',
         'type' => 'text',
         'not null' => TRUE,
