@@ -1,0 +1,42 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the hosting_site_probes module.
+ *
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function hosting_site_probes_uninstall() {
+  // TODO: Remove variables?
+}
+
+/**
+ * Implements hook_schema().
+ */
+function hosting_site_probes_schema() {
+  $schema = array();
+
+  $schema['hosting_site_probes_sites'] = array(
+    'description' => 'A cache of the last stats aggregation times of all enabled sites.',
+    'fields' => array(
+      'site_id' => array(
+        'description' => 'The sites nid from the {node} table.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'last_stats' => array(
+        'description' => 'The timestamp of the last stats aggregation of this site.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('site_id'),
+    'indexes' => array(
+      'last_stats' => array('last_stats'),
+    ),
+  );
+
+  return $schema;
+}
