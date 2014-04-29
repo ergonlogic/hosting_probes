@@ -1,2 +1,69 @@
 <?php
 
+/**
+ * Implements hook_hosting_queues().
+ *
+ * Returns a list of queues that this module needs to manage.
+ */
+function hosting_site_probes_hosting_queues() {
+  $queues['site_probes'] = array(
+    'type' => 'batch',
+    'name' => t('Site probes'),
+    'description' => t('Aggregate site stats.'),
+    'frequency' => strtotime("1 hour", 0),
+    'min_threads' => 6,
+    'max_threads' => 12,
+    'threshold' => 100,
+    'total_items' => hosting_site_count(),
+    'singular' => t('site'),
+    'plural' => t('sites'),
+  );
+
+  return $queues;
+}
+
+
+/**
+ * The main queue callback for the probe queue.
+ */
+function hosting_site_probes_queue($count) {
+  watchdog('hosting_site_probes', 'Test: ' . variable_get('hosting_site_probes_default_enabled', 'Nothing'));
+
+  // Early exit if we are disabled.
+  // TODO: Set the variable
+  if (!variable_get('hosting_site_probes_default_enabled', FALSE)) {
+    return;
+  }
+
+  // TODO Get the settings
+  $intervals = variable_get('hosting_site_probes_intervals', array());
+  ksort($intervals);
+  // Early exit if we've no work to do.
+  if (empty($intervals)) {
+    return;
+  }
+
+  // Otherwise loop over all the hosted sites.
+  $sites = hosting_site_probes_get_sites($count);
+
+  foreach ($sites as $site) {
+    // TODO: Do the stats aggregation
+  }
+}
+
+/**
+ * Get sites that need to be checked for backup GC.
+ *
+ * TODO: Make this work
+ */
+function hosting_site_probes_get_sites($limit = 5) {
+  return node_load(10);
+
+  $sites = array();
+  $result = db_query("SELECT n.nid FROM {node} n LEFT JOIN {hosting_site} s ON n.nid = s.nid LEFT JOIN {hosting_backup_gc_sites} gc ON n.nid = gc.site_id WHERE n.type = :n.type and s.status = :s.status ORDER BY gc.last_gc ASC, n.nid ASC limit %d", array(':n.type' => 'site', ':s.status' => HOSTING_SITE_ENABLED, '' => $limit));
+
+  while ($nid = db_fetch_object($result)) {
+    $sites[$nid->nid] = node_load($nid->nid);
+  }
+  return $sites;
+}
