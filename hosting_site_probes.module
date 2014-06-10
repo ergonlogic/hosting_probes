@@ -9,7 +9,7 @@ function hosting_site_probes_hosting_queues() {
   $queues['site_probes'] = array(
     'type' => 'batch',
     'name' => t('Site probes'),
-    'description' => t('Aggregate site stats.'),
+    'description' => t('Probe sites for info.'),
     'frequency' => strtotime("1 hour", 0),
     'min_threads' => 6,
     'max_threads' => 12,
@@ -27,16 +27,9 @@ function hosting_site_probes_hosting_queues() {
  * The main queue callback for the probe queue.
  */
 function hosting_site_probes_queue($count) {
-  watchdog('hosting_site_probes', 'Test: ' . variable_get('hosting_site_probes_default_enabled', 'Nothing'));
-
-  // Early exit if we are disabled.
-  // TODO: Set the variable
-  if (!variable_get('hosting_site_probes_default_enabled', FALSE)) {
-    return;
-  }
-
   // TODO Get the settings
-  $intervals = variable_get('hosting_site_probes_intervals', array());
+  $intervals = variable_get('hosting_site_probes_intervals', 'nada');
+
   ksort($intervals);
   // Early exit if we've no work to do.
   if (empty($intervals)) {
