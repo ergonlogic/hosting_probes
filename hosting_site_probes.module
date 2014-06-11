@@ -10,7 +10,7 @@ function hosting_site_probes_hosting_queues() {
     'type' => 'batch',
     'name' => t('Site probes'),
     'description' => t('Probe sites for info.'),
-    'frequency' => strtotime("1 hour", 0),
+    'frequency' => strtotime("1 min", 0),
     'min_threads' => 6,
     'max_threads' => 12,
     'threshold' => 100,
@@ -22,16 +22,82 @@ function hosting_site_probes_hosting_queues() {
   return $queues;
 }
 
+/**
+ * Hook documentation
+ *
+ * !nid will be replaced by the site's nid
+ */
+function hook_site_probe_queries() {
+  $queries = array(
+    'nid_square' => array(
+      '#query' => "SELECT (nid * nid) AS nid_square FROM node",
+      '#multiple' => 'TRUE',
+    ),
+    'vid_sum' => array(
+      '#query' => "SELECT sum(vid) AS vid_sum FROM node_revision",
+      '#multiple' => 'TRUE',
+    ),
+  );
+
+  return $queries;
+}
+
+/**
+ * Implements hook_site_probe_queries().
+ */
+function hosting_site_probes_site_probe_queries() {
+  $queries = array(
+    'user_count' => array(
+      '#sql' => "SELECT count(uid) AS user_count FROM users",
+      '#parser_callback' => NULL,
+    ),
+    'rid' => array(
+      '#sql' => "SELECT rid AS rid FROM role",
+      '#multiple' => TRUE,
+      '#parser_callback' => NULL,
+    ),
+  );
+  
+  return $queries;
+}
+
 
 /**
  * The main queue callback for the probe queue.
  */
 function hosting_site_probes_queue($count) {
-  // Otherwise loop over all the hosted sites.
   $sites = hosting_site_probes_get_sites_and_settings();
 
-  foreach ($sites as $site) {
-    // TODO: Do the stats aggregation
+  $queries = module_invoke_all('site_probe_queries');
+
+  foreach ($sites as $nid => $site) {
+    $results = array();
+
+    foreach($queries as $name => $query_array) {
+      $site_name = $site->hosting_name;
+
+      $query = $query_array['#sql'];
+      $command = "drush @$site_name sql-query \"$query\""; # --extra=--skip-column-names";
+
+      $output = '';
+      $result = exec($command, $output);
+
+      foreach ($output as $line) {
+        if (!empty($query_array['#parser_callback'])) {
+          //TODO: Do something here and test it
+        }
+
+        if (!empty($line)) {
+          $results[$name] = $line;
+        }
+
+        if (!(isset($query_array['#multiple']) && $query_array['#multiple'] === TRUE)) {
+          continue;
+        }
+      }
+    }
+    
+    // hosting_site_probes_create_report($nid, $results);
   }
 }
 
