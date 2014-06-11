@@ -18,25 +18,70 @@ function hosting_site_probes_uninstall() {
 function hosting_site_probes_schema() {
   $schema = array();
 
-  $schema['hosting_site_probes_sites'] = array(
-    'description' => 'A cache of the last stats aggregation times of all enabled sites.',
+  $schema['hosting_site_probe_reports'] = array(
+    'description' => '.',
     'fields' => array(
+      'id' => array(
+        'description' => "The report's unique identifier",
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
       'site_id' => array(
-        'description' => 'The sites nid from the {node} table.',
+        'description' => 'The id of the site this report is about.',
         'type' => 'int',
         'not null' => TRUE,
       ),
-      'last_stats' => array(
-        'description' => 'The timestamp of the last stats aggregation of this site.',
+      'vid' => array(
+        'description' => 'The current revision id.',
         'type' => 'int',
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('site_id'),
+    'primary key' => array('id'),
     'indexes' => array(
-      'last_stats' => array('last_stats'),
+      'id' => array('id'),
+      'vid' => array('vid'),
+      'site_id_index' => array('site_id'),
+    ),
+    'unique keys' => array(
+      'id_vid' => array('id', 'vid'),
+      'site_id' => array('site_id'),
     ),
   );
+
+  $schema['hosting_site_probe_report_revisions'] = array(
+    'description' => 'Keeps track of example entities.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Unique entity id.',
+      ),
+      'vid' => array(
+        'description' => 'The current version identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the site report was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      // Any other columns that you have in the example entity table that you
+      // want to store in revisions.
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'vid' => array('vid'),
+      'changed' => array('changed'),
+    ),
+    'primary key' => array('id', 'vid'),
+  );
+
 
   return $schema;
 }
