@@ -1,0 +1,74 @@
+<?php
+
+/**
+ * Implements hook_hosting_queues().
+ *
+ * Returns a list of queues that this module needs to manage.
+ */
+function hosting_server_probes_hosting_queues() {
+  $queues['server_probes'] = array(
+    'type' => 'batch',
+    'name' => t('Server probes'),
+    'description' => t('Probe servers for info.'),
+    'frequency' => strtotime("1 min", 0),
+    'min_threads' => 6,
+    'max_threads' => 12,
+    'threshold' => 100,
+    'total_items' => hosting_server_count(),
+    'singular' => t('server'),
+    'plural' => t('servers'),
+  );
+
+  return $queues;
+}
+
+/**
+ * Returns a count of servers.
+ *
+ * This is used by cron and statistics to batch the number of servers that are
+ * processed with each call.
+ *
+ * @return
+ *   The number of servers in the Aegir deployment.
+ */
+function hosting_server_count() {
+  $query = db_select('hosting_server')
+    ->addTag('hosting_server_count')
+    ->fields('hosting_server', array('nid'));
+  return $query->countQuery()->execute()->fetchField();
+}
+
+/**
+ * The main queue callback for the probe queue.
+ */
+function hosting_server_probes_queue($count) {
+  $servers = hosting_server_probes_get_servers();
+
+  $commands = module_invoke_all('server_probe_commands');
+
+  foreach ($servers as $nid => $server) {
+    $results = array();
+
+    foreach($commands as $name => $command_array) {
+      $server_name = $server->hosting_name;
+
+      $command = $command_array['#command'];
+      $command = "drush @$server_name eval \"system('$command');\"";
+
+      if ($result = drush_shell_exec($command)) {
+        $output = drush_shell_exec_output();
+        if (!empty($command_array['#callback'])) {
+          call_user_func_array($command_array['#callback'], array($nid, $server, $output));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get servers that need to be probed.
+ */
+function hosting_server_probes_get_servers() {
+  $servers = node_load_multiple(array(), array('type'=>'server'));
+  return $servers;
+}

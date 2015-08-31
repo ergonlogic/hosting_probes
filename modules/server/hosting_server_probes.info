@@ -1,0 +1,5 @@
+name = Aegir Server Probes
+description = Provides information on hosted servers.
+core = 7.x
+package = Hosting
+dependencies[] = hosting
